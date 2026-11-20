@@ -1,0 +1,9 @@
+task,method,val_acc,seconds
+image,k-NN,0.61475,18.6
+image,Decision Tree,0.11925,11.7
+image,Random Forest,0.36625,796.6
+image,Neural Network,0.38725,350.1
+sentiment,k-NN,0.5933333333333334,0.9
+sentiment,Decision Tree,0.4895833333333333,3.2
+sentiment,Random Forest,0.6029166666666667,154.5
+sentiment,Neural Network,0.68125,42.2
