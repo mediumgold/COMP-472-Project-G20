@@ -34,8 +34,7 @@ source .venv/bin/activate            # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-Download the five competition CSVs from Kaggle into a `data/` folder (it is not in git because
-`sentiment_train.csv` is over GitHub's 100 MB limit):
+Download the five competition CSVs from Kaggle into a `data/` folder:
 
 ```
 data/image_train.csv  data/image_test.csv  data/sentiment_train.csv  data/sentiment_test.csv  data/sample_submission.csv
