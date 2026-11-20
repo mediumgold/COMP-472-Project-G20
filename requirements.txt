@@ -1,0 +1,6 @@
+numpy>=2.0
+pandas>=2.1
+matplotlib>=3.8
+torch>=2.3          # neural network only
+scikit-learn>=1.4   # evaluation metrics only (F1, confusion matrix, NMI, ARI)
+jupyter
