@@ -41,7 +41,9 @@ data/image_train.csv  data/image_test.csv  data/sentiment_train.csv  data/sentim
 ```
 
 **Quick version:** `python main.py` trains every model's final configuration on both datasets and
-prints the table above (about 25 minutes on a laptop, mostly the Random Forest). `python main.py --submission` also writes `submission.csv`.
+prints the table above (about 4 minutes on a multi-core laptop, mostly the Random Forest, which uses
+all CPU cores by default; limit it with `--jobs N`, and expect it to take longer on fewer cores).
+`python main.py --submission` also writes `submission.csv`.
 
 **Full experiments:** the notebooks in `notebooks/` contain every sweep and plot and are saved with
 their outputs, so you can read them without running anything. To re-run, open `jupyter lab` and run

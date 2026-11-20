@@ -129,7 +129,7 @@ def main():
     parser.add_argument("--task", choices=["image", "sentiment", "both"], default="both")
     parser.add_argument("--models", default="knn,dt,rf,nn", help="comma-separated: knn, dt, rf, nn")
     parser.add_argument("--rf-trees", type=int, default=400)
-    parser.add_argument("--jobs", type=int, default=4, help="CPU processes for the Random Forest")
+    parser.add_argument("--jobs", type=int, default=-1, help="CPU processes for the Random Forest (-1 = all cores)")
     parser.add_argument("--submission", action="store_true", help="also write submission.csv")
     parser.add_argument("--submission-only", action="store_true", help="only write submission.csv")
     args = parser.parse_args()
