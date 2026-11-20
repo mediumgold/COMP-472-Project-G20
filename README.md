@@ -104,4 +104,4 @@ No scikit-learn models are used.
 ## Acknowledgements
 
 This code was developed with the help of an AI tool (Claude, by Anthropic), as the project rules
-require us to acknowledge. Every team member should be able to explain any part of `src/` and the notebooks.
+require us to acknowledge.
