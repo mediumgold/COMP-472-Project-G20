@@ -8,6 +8,9 @@ Parameters
   k        number of neighbours that vote
   metric   "euclidean"     straight-line distance ||a - b||
            "cosine"        1 - cos(angle between a and b), ignores vector length
+           "intersection"  1 - sum_i min(a_i, b_i)              (histograms only)
+           "chi2"          0.5 * sum_i (a_i - b_i)^2 / (a_i + b_i) (histograms only)
+           For the two histogram distances every row is first rescaled to sum to 1.
   weights  "uniform"   every neighbour gets 1 vote
            "distance"  closer neighbours get bigger votes: weight = 1 / distance^power
   power    how strongly closer neighbours count (only for weights="distance")
@@ -17,7 +20,7 @@ import numpy as np
 
 class KNNClassifier:
     def __init__(self, k=5, metric="euclidean", weights="uniform", power=1.0, n_classes=None):
-        assert metric in ("euclidean", "cosine")
+        assert metric in ("euclidean", "cosine", "intersection", "chi2")
         self.k = k
         self.metric = metric
         self.weights = weights
@@ -32,8 +35,10 @@ class KNNClassifier:
         # Precompute what we can about the training rows once, instead of for every query
         if self.metric == "euclidean":
             self.train_sq_norms = (self.X_train ** 2).sum(axis=1)
-        else:
+        elif self.metric == "cosine":
             self.train_unit = self.X_train / (np.linalg.norm(self.X_train, axis=1, keepdims=True) + 1e-12)
+        else:
+            self.train_hist = to_histogram(self.X_train)
         return self
 
     # ---------------------------------------------------------------- distances
@@ -43,8 +48,36 @@ class KNNClassifier:
             # |a - b|^2 = |a|^2 - 2 a.b + |b|^2, so one matrix multiply does all pairs at once
             d2 = (Q ** 2).sum(axis=1, keepdims=True) - 2.0 * Q @ self.X_train.T + self.train_sq_norms
             return np.sqrt(np.maximum(d2, 0.0))
-        Q_unit = Q / (np.linalg.norm(Q, axis=1, keepdims=True) + 1e-12)
-        return 1.0 - Q_unit @ self.train_unit.T
+        if self.metric == "cosine":
+            Q_unit = Q / (np.linalg.norm(Q, axis=1, keepdims=True) + 1e-12)
+            return 1.0 - Q_unit @ self.train_unit.T
+        return self.histogram_distances(Q)
+
+    def histogram_distances(self, Q):
+        """
+        Intersection and chi2 for histograms whose rows sum to 1:
+            intersection = 1 - sum_i min(a_i, b_i)
+            chi2         = 1 - 2 * sum_i a_i b_i / (a_i + b_i)   (same as the formula above)
+        A feature only contributes when it is non-zero in BOTH histograms. The image
+        features are ~85% zeros, so we loop over the 500 features and only touch the
+        (query, train) pairs where both are non-zero. Much faster than the direct formula.
+        """
+        Q = to_histogram(Q)
+        B = self.train_hist
+        S = np.zeros((len(Q), len(B)), dtype=np.float32)
+        for i in range(B.shape[1]):
+            q_rows = np.flatnonzero(Q[:, i])
+            b_rows = np.flatnonzero(B[:, i])
+            if len(q_rows) == 0 or len(b_rows) == 0:
+                continue
+            a = Q[q_rows, i][:, None]
+            b = B[b_rows, i][None, :]
+            if self.metric == "intersection":
+                S[np.ix_(q_rows, b_rows)] += np.minimum(a, b)
+            else:
+                S[np.ix_(q_rows, b_rows)] += a * b / (a + b)
+        D = 1.0 - S if self.metric == "intersection" else 1.0 - 2.0 * S
+        return np.maximum(D, 0.0)
 
     # ------------------------------------------------------------- neighbours
     def kneighbors(self, X, k=None, chunk_size=1000):
@@ -91,3 +124,8 @@ class KNNClassifier:
     def predict(self, X):
         return self.predict_proba(X).argmax(axis=1)
 
+
+def to_histogram(X):
+    """Rescale each (non-negative) row to sum to 1."""
+    assert (X >= 0).all(), "histogram distances need non-negative features (don't standardize)"
+    return X / (X.sum(axis=1, keepdims=True) + 1e-12)
