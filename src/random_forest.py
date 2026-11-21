@@ -10,6 +10,9 @@ different on purpose and averages their predicted probabilities:
 Out-of-bag (OOB) score: every training row is predicted only by the trees that did
 NOT see it in their bootstrap sample, which gives a free estimate of accuracy.
 
+Feature importance: the forest exposes `feature_importances`, the mean of the per-tree
+Gini importance vectors (each tree's vector sums to 1, so their mean does too).
+
 n_jobs > 1 grows trees in parallel processes. Each tree's randomness comes from its
 own seed, so the forest is identical whether we use 1 core or 12.
 """
@@ -86,6 +89,10 @@ class RandomForestClassifier:
         if self.bootstrap:
             seen = oob_count > 0
             self.oob_score = float(np.mean(oob_sum[seen].argmax(1) == y[seen]))
+
+        # mean of the trees' Gini importance (same definition as the single tree)
+        props = np.mean([t.feature_importances for t in self.trees], axis=0)
+        self.feature_importances = props / props.sum() if props.sum() > 0 else props
         return self
 
     def predict_proba(self, X):
